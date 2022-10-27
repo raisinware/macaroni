@@ -1,0 +1,2 @@
+COMMON_FLAGS="${COMMON_FLAGS} -march=bonnell -mno-cx16 --param=l1-cache-line-size=64 --param=l1-cache-size=24 --param=l2-cache-size=512 -mfunction-return=keep -mindirect-branch=keep -mharden-sls=none"
+LLVM_TARGETS="-* +x86"
