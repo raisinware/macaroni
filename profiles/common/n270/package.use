@@ -1,0 +1,5 @@
+*/* CPU_FLAGS_X86: mmx mmxext sse sse2 sse3 ssse3
+*/* VIDEO_CARDS: intel fbdev vesa 
+sys-devel/llvm LLVM_TARGETS: X86
+sys-devel/clang LLVM_TARGETS: X86
+dev-lang/rust LLVM_TARGETS: X86
