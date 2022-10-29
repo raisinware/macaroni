@@ -1,2 +1,2 @@
 gentoo:default/linux/x86/17.0/musl
-../../../../common/n270
+../../../common/n270
