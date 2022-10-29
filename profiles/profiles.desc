@@ -1,2 +1,4 @@
+x86 x86/17.0/musl dev
+x86 x86/17.0/musl/merged-usr dev
 x86 x86/17.0/musl/desktop dev
 x86 x86/17.0/musl/desktop/merged-usr dev
