@@ -2,3 +2,5 @@ CFLAGS="-march=bonnell -mno-cx16 --param=l1-cache-line-size=64 --param=l1-cache-
 CXXFLAGS="${CFLAGS}"
 FFLAGS="${CFLAGS}"
 FCFLAGS="${CFLAGS}"
+VIDEO_CARDS="-* intel fbdev vesa"
+CPU_FLAGS_X86="-* mmx mmxext sse sse2 sse3 ssse3"
