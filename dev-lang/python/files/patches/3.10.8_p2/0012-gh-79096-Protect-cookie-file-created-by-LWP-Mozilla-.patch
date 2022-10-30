@@ -1,0 +1,115 @@
+From be8f8a007dd6489f8a061d030b71e46acc6d7de3 Mon Sep 17 00:00:00 2001
+From: Pascal Wittmann <mail@pascal-wittmann.de>
+Date: Tue, 7 Jun 2022 10:11:03 +0200
+Subject: [PATCH 12/14] gh-79096: Protect cookie file created by
+ {LWP,Mozilla}CookieJar.save() (GH-93463)
+
+Note: This change is not effective on Microsoft Windows.
+
+Cookies can store sensitive information and should therefore be protected
+against unauthorized third parties. This is also described in issue #79096.
+
+The filesystem permissions are currently set to 644, everyone can read the
+file. This commit changes the permissions to 600, only the creater of the file
+can read and modify it. This improves security, because it reduces the attack
+surface. Now the attacker needs control of the user that created the cookie or
+a ways to circumvent the filesystems permissions.
+
+This change is backwards incompatible. Systems that rely on world-readable
+cookies will breake. However, one could argue that those are misconfigured in
+the first place.
+---
+ Lib/http/cookiejar.py                         |  4 +--
+ Lib/test/test_http_cookiejar.py               | 31 +++++++++++++++++++
+ ...2-06-03-12-52-53.gh-issue-79096.YVoxgC.rst |  1 +
+ 3 files changed, 34 insertions(+), 2 deletions(-)
+ create mode 100644 Misc/NEWS.d/next/Security/2022-06-03-12-52-53.gh-issue-79096.YVoxgC.rst
+
+diff --git a/Lib/http/cookiejar.py b/Lib/http/cookiejar.py
+index 0380d9f109..8156678885 100644
+--- a/Lib/http/cookiejar.py
++++ b/Lib/http/cookiejar.py
+@@ -1895,7 +1895,7 @@ def save(self, filename=None, ignore_discard=False, ignore_expires=False):
+             if self.filename is not None: filename = self.filename
+             else: raise ValueError(MISSING_FILENAME_TEXT)
+ 
+-        with open(filename, "w") as f:
++        with os.fdopen(os.open(filename, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as f:
+             # There really isn't an LWP Cookies 2.0 format, but this indicates
+             # that there is extra information in here (domain_dot and
+             # port_spec) while still being compatible with libwww-perl, I hope.
+@@ -2091,7 +2091,7 @@ def save(self, filename=None, ignore_discard=False, ignore_expires=False):
+             if self.filename is not None: filename = self.filename
+             else: raise ValueError(MISSING_FILENAME_TEXT)
+ 
+-        with open(filename, "w") as f:
++        with os.fdopen(os.open(filename, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as f:
+             f.write(NETSCAPE_HEADER_TEXT)
+             now = time.time()
+             for cookie in self:
+diff --git a/Lib/test/test_http_cookiejar.py b/Lib/test/test_http_cookiejar.py
+index 9450104d0b..15b281ae79 100644
+--- a/Lib/test/test_http_cookiejar.py
++++ b/Lib/test/test_http_cookiejar.py
+@@ -1,6 +1,7 @@
+ """Tests for http/cookiejar.py."""
+ 
+ import os
++import sys
+ import re
+ import test.support
+ from test.support import os_helper
+@@ -17,6 +18,7 @@
+      reach, is_HDN, domain_match, user_domain_match, request_path,
+      request_port, request_host)
+ 
++mswindows = (sys.platform == "win32")
+ 
+ class DateTimeTests(unittest.TestCase):
+ 
+@@ -368,6 +370,35 @@ def test_lwp_valueless_cookie(self):
+             except OSError: pass
+         self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
+ 
++    @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
++    def test_lwp_filepermissions(self):
++        # Cookie file should only be readable by the creator
++        filename = os_helper.TESTFN
++        c = LWPCookieJar()
++        interact_netscape(c, "http://www.acme.com/", 'boo')
++        try:
++            c.save(filename, ignore_discard=True)
++            status = os.stat(filename)
++            print(status.st_mode)
++            self.assertEqual(oct(status.st_mode)[-3:], '600')
++        finally:
++            try: os.unlink(filename)
++            except OSError: pass
++
++    @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
++    def test_mozilla_filepermissions(self):
++        # Cookie file should only be readable by the creator
++        filename = os_helper.TESTFN
++        c = MozillaCookieJar()
++        interact_netscape(c, "http://www.acme.com/", 'boo')
++        try:
++            c.save(filename, ignore_discard=True)
++            status = os.stat(filename)
++            self.assertEqual(oct(status.st_mode)[-3:], '600')
++        finally:
++            try: os.unlink(filename)
++            except OSError: pass
++
+     def test_bad_magic(self):
+         # OSErrors (eg. file doesn't exist) are allowed to propagate
+         filename = os_helper.TESTFN
+diff --git a/Misc/NEWS.d/next/Security/2022-06-03-12-52-53.gh-issue-79096.YVoxgC.rst b/Misc/NEWS.d/next/Security/2022-06-03-12-52-53.gh-issue-79096.YVoxgC.rst
+new file mode 100644
+index 0000000000..9ec3335dc7
+--- /dev/null
++++ b/Misc/NEWS.d/next/Security/2022-06-03-12-52-53.gh-issue-79096.YVoxgC.rst
+@@ -0,0 +1 @@
++LWPCookieJar and MozillaCookieJar create files with file mode 600 instead of 644 (Microsoft Windows is not affected)
+-- 
+2.38.1
+

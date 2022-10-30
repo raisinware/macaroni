@@ -1,0 +1,24 @@
+From 168dfb048c3d8db02279af905e41a4f01f20e76b Mon Sep 17 00:00:00 2001
+From: Mike Gilbert <floppym@gentoo.org>
+Date: Wed, 4 Jul 2018 11:39:21 -0400
+Subject: [PATCH 05/14] Disable nis
+
+---
+ setup.py | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index b6f7163591..c78a9fac46 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1904,7 +1904,6 @@ def detect_modules(self):
+         self.detect_dbm_gdbm()
+         self.detect_sqlite()
+         self.detect_platform_specific_exts()
+-        self.detect_nis()
+         self.detect_compress_exts()
+         self.detect_expat_elementtree()
+         self.detect_multibytecodecs()
+-- 
+2.38.1
+
