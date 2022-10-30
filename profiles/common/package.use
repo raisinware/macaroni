@@ -1,2 +1,8 @@
+# make binutils multitarget because we can
 sys-devel/binutils gprofng multitarget plugins 
 sys-libs/binutils-libs multitarget
+
+# disable pgo on webbrowsers
+www-client/firefox -pgo
+mail-client/thunderbird -pgo
+www-client/chromium -pgo
